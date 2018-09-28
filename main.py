@@ -10,7 +10,7 @@ from sklearn.svm import SVR
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
 from xgboost import XGBRegressor
-from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import cross_validate, cross_val_score
 
 # Importing the dataset
 orig_train = pd.read_csv('dataset/train.csv')
@@ -150,17 +150,15 @@ X_train = df_train.values
 # Avoiding dummy variable trap
 
 
-#  Feature Scaling
+'''# Feature Scaling
 sc_X = StandardScaler()
 X_train = sc_X.fit_transform(X_train)
 X_test = sc_X.transform(X_test)
 sc_y = StandardScaler()
 y_train = sc_y.fit_transform(y_train.reshape(-1, 1))
-y_train = y_train.ravel()
+y_train = y_train.ravel()'''
 
 # Fitting different regressors
-svm = SVR()
-svm.fit(X_train, y_train)
 dt = DecisionTreeRegressor()
 dt.fit(X_train, y_train)
 rf = RandomForestRegressor()
@@ -170,31 +168,27 @@ xgb.fit(X_train, y_train)
 
 # Applying k-Fold Cross Validation to all regressors
 col = ['Regressor', 'Mean', 'Standard Deviation']
-accuracy = pd.DataFrame(index = range(0,4), columns = col)
-accuracy['Regressor'] = ['SVM',
-                        'Decision Tree',
-                        'Random Forest',
-                        'XGBoost']
-acc_mean = []
-acc_std = []
-score_svm = cross_val_score(estimator = svm, X = X_train, y = y_train, cv = 10)
-acc_mean.append(score_svm.mean())
-acc_std.append(score_svm.std())
-score_dt = cross_val_score(estimator = dt, X = X_train, y = y_train, cv = 10)
-acc_mean.append(score_dt.mean())
-acc_std.append(score_dt.std())
-score_rf = cross_val_score(estimator = rf, X = X_train, y = y_train, cv = 10)
-acc_mean.append(score_rf.mean())
-acc_std.append(score_rf.std())
-score_xgb = cross_val_score(estimator = xgb, X = X_train, y = y_train, cv = 10)
-acc_mean.append(score_xgb.mean())
-acc_std.append(score_xgb.std())
-accuracy['Mean'] = acc_mean
-accuracy['Standard Deviation'] = acc_std
-print(accuracy)
+rmsle = pd.DataFrame(index = range(0,3), columns = col)
+rmsle['Regressor'] = ['Decision Tree',
+                     'Random Forest',
+                     'XGBoost']
+rmsle_mean = []
+rmsle_std = []
+score_dt = cross_val_score(estimator = dt, X = X_train, y = y_train, scoring = 'neg_mean_squared_log_error', cv = 10)
+rmsle_mean.append(score_dt.mean())
+rmsle_std.append(score_dt.std())
+score_rf = cross_val_score(estimator = rf, X = X_train, y = y_train, scoring = 'neg_mean_squared_log_error', cv = 10)
+rmsle_mean.append(score_rf.mean())
+rmsle_std.append(score_rf.std())
+score_xgb = cross_val_score(estimator = xgb, X = X_train, y = y_train, scoring = 'neg_mean_squared_log_error', cv = 10)
+rmsle_mean.append(score_xgb.mean())
+rmsle_std.append(score_xgb.std())
+rmsle['Mean'] = rmsle_mean
+rmsle['Standard Deviation'] = rmsle_std
+print(rmsle)
 
 # Predicting the Test set results
-y_pred = sc_y.inverse_transform(xgb.predict(X_test))
+y_pred = xgb.predict(X_test)
 
 # Generating submission file
 submission = pd.DataFrame({'Id': ID, 'SalePrice': y_pred})
