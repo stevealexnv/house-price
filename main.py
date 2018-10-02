@@ -80,8 +80,8 @@ for dataset in df_data:
 for dataset in df_data:
     dataset['TotalSF'] = dataset['TotalBsmtSF'] + dataset['1stFlrSF'] + dataset['2ndFlrSF']
 
-# Encoding categorical data
-cat_col = ['MSSubClass',
+'''# Encoding categorical data
+cat_cols = ['MSSubClass',
        'MSZoning',
        'Street',
        'Alley',
@@ -126,29 +126,72 @@ cat_col = ['MSSubClass',
        'SaleType',
        'SaleCondition']
 df = df_train.append(df_test, sort = False)
-for c in cat_col:
+for c in cat_cols:
     le = LabelEncoder()
     le.fit(df[c].values)
     for dataset in df_data:
-        dataset[c] = le.transform(dataset[c].values)
+        dataset[c] = le.transform(dataset[c].values)'''
 
 # Feature Selection
 ID = df_test['Id']
 drop_features = ['Utilities', 'Id']
 df_train = df_train.drop(drop_features, axis = 1)
 df_test = df_test.drop(drop_features, axis = 1)
+dum_cols = ['MSSubClass',
+       'MSZoning',
+       'Street',
+       'Alley',
+       'LotShape',
+       'LandContour',
+       'LotConfig',
+       'LandSlope',
+       'Neighborhood',
+       'Condition1',
+       'Condition2',
+       'BldgType',
+       'HouseStyle',
+       'RoofStyle',
+       'RoofMatl',
+       'Exterior1st',
+       'Exterior2nd',
+       'MasVnrType',
+       'ExterQual',
+       'ExterCond',
+       'Foundation',
+       'BsmtQual',
+       'BsmtCond',
+       'BsmtExposure',
+       'BsmtFinType1',
+       'BsmtFinType2',
+       'Heating',
+       'HeatingQC',
+       'CentralAir',
+       'Electrical',
+       'KitchenQual',
+       'Functional',
+       'FireplaceQu',
+       'GarageType',
+       'GarageFinish',
+       'GarageQual',
+       'GarageCond',
+       'PavedDrive',
+       'PoolQC',
+       'Fence',
+       'MiscFeature',
+       'SaleType',
+       'SaleCondition']
+df = df_train.append(df_test, sort = False)
+for dum_col in dum_cols:
+    df = pd.concat([df, pd.get_dummies(df[dum_col], prefix = dum_col, drop_first = True)], axis = 1).drop([dum_col], axis=1)
 
 # Creating Training and Test set arrays
-X_test = df_test.values
+df_train = df.iloc[:1460]
+df_test = df.iloc[1460:]
 y_train = df_train['SalePrice'].values
-df_train = df_train.drop(['SalePrice'], axis = 1)
+df_train = df_train.drop('SalePrice', axis = 1)
+df_test = df_test.drop('SalePrice', axis = 1)
+X_test = df_test.values
 X_train = df_train.values
-
-# Using One Hot Encoder to remove ordering of classes in
-
-
-# Avoiding dummy variable trap
-
 
 '''# Feature Scaling
 sc_X = StandardScaler()
