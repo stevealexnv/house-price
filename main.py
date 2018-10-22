@@ -10,6 +10,7 @@ from sklearn.svm import SVR
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
 from xgboost import XGBRegressor
+import statsmodels.formula.api as sm
 from sklearn.model_selection import cross_validate, cross_val_score
 
 # Importing the dataset
@@ -229,6 +230,53 @@ rmsle_std.append(score_xgb.std())
 rmsle['Mean'] = rmsle_mean
 rmsle['Standard Deviation'] = rmsle_std
 print(rmsle)
+
+#Building the optimal model using Backward Elimination
+def BackwardElimination(x, sl):
+    num_vars = len(x[0])
+    temp = np.zeros((1460, 273)).astype(int)
+    for i in range(0, num_vars):
+        regressor_OLS = sm.OLS(y_train, x).fit()
+        max_pval = max(regressor_OLS.pvalues).astype(float)
+        adjR_before = regressor_OLS.rsquared_adj.astype(float)
+        if max_pval > sl:
+            for j in range(0, num_vars - i):
+                if(regressor_OLS.pvalues[j].astype(float) == max_pval):
+                    temp[:, j] = x[:, j]
+                    x = np.delete(x, j, 1)
+                    tmp_regressor = sm.OLS(y_train, x).fit()
+                    adjR_after = tmp_regressor.rsquared_adj.astype(float)
+                    if(adjR_before >= adjR_after):
+                        x_rollback = np.hstack((x, temp[:, [0, j]]))
+                        x_rollback = np.delete(x_rollback, j, 1)
+                        print(regressor_OLS.summary())
+                        return x_rollback
+                    else:
+                        continue
+    print(regressor_OLS.summary())
+    return x
+
+SL = 0.05
+X_train = np.append(arr = np.ones((1460, 1)).astype(int), values = X_train, axis = 1)
+X_opt = X_train[:, :273]
+X_modelled = BackwardElimination(X_opt, SL)
+
+def backwardElimination(x, sl):
+    numVars = len(x[0])
+    for i in range(0, numVars):
+        regressor_OLS = sm.OLS(y_train, x).fit()
+        maxVar = max(regressor_OLS.pvalues).astype(float)
+        if maxVar > sl:
+            for j in range(0, numVars - i):
+                if (regressor_OLS.pvalues[j].astype(float) == maxVar):
+                    x = np.delete(x, j, 1)
+    print(regressor_OLS.summary())
+    return x
+ 
+SL = 0.05
+X_train = np.append(arr = np.ones((1460, 1)).astype(int), values = X_train, axis = 1)
+X_opt = X_train[:, :273]
+X_modelled = backwardElimination(X_opt, SL)
 
 # Predicting the Test set results
 y_pred = xgb.predict(X_test)
